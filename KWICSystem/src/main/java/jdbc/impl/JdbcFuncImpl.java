@@ -136,7 +136,10 @@ public class JdbcFuncImpl implements JdbcFunc {
         }
         else {
             System.out.println("~当前数据库中所有语句如下：");
-            jdbcs.forEach(jdbc -> System.out.println(jdbc));
+            //jdbcs.forEach(jdbc -> System.out.println(jdbc));
+            for (Jdbc jdbc : jdbcs) {
+                System.out.println(jdbc);
+            }
         }
     }
 
