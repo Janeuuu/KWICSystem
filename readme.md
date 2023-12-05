@@ -4,7 +4,8 @@
 
 ### 目标系统需求概述
 
-![image-20231205121413498](.\img\目标系统需求概述)
+<img width="504" alt="目标系统需求概述github" src="https://github.com/xiahang-bupt/KWICSystem/assets/146155357/af4861a1-969a-4af7-9ea0-8e1bccadf3cb">
+
 
 - 要求系统输入还可支持Socket输入、消息中间件输入、数据库输入等
 - 系统中各个模块可独立升级
