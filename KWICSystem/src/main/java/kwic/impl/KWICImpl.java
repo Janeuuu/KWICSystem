@@ -2,11 +2,13 @@ package kwic.impl;
 
 import input.Input;
 import input.impl.InputImpl;
-import jdbc.JdbcFunc;
 import jdbc.impl.JdbcFuncImpl;
 import kwic.KWIC;
 import output.Output;
 import output.impl.OutputImpl;
+import rabbitmq.Consumer;
+import rabbitmq.RabbitMq;
+import rabbitmq.Producer;
 import shift.CircularShifter;
 import shift.impl.CircularShifterImpl;
 import socket.impl.SocketServerImpl;
@@ -115,6 +117,20 @@ public class KWICImpl extends Thread implements KWIC {
             // 读取输入，input中的方法
             line = input.readLine();
 
+            if (cmdCode == MSG_ADD_LINES && !isCmdMode) {
+                try {
+                    String x = line;
+                    Producer.send(x);
+                    Consumer.getMessage();
+                    line = Consumer.rabbitMqRes;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+
             if (isCmdMode) {
                 // 如果仍为true，表示程序处于功能选择模式，解析用户的输入，得到命令码
                 cmdCode = parseCmd(line);
@@ -144,7 +160,13 @@ public class KWICImpl extends Thread implements KWIC {
                         break;
                     case MSG_ADD_LINES:
                         // 如果选择消息中间件输入，则启动MSGServerImpl
-
+                        try {
+                            RabbitMq.getConnection();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                        System.out.print("请输入内容：");
+                        isCmdMode = false;
                         break;
                     case CMD_QUIT:
                         // 如果选择退出，则退出程序
@@ -158,6 +180,7 @@ public class KWICImpl extends Thread implements KWIC {
                         break;
                 }
             } else {
+
                 if (cmdCode == CMD_ADD_LINE) {
                     // 如果是命令行输入，则直接调用setup方法读取改行，这一步将所有的循环移位存储到shifter创建的LineStorageImpl对象中
                     shifter.setup(line);
@@ -165,6 +188,8 @@ public class KWICImpl extends Thread implements KWIC {
                     // 如果是文件输入，则调用readFile方法根据用户输入的路径读取文件，这一步将所有的循环移位存储到shifter创建的LineStorageImpl对象中
                     List<String> fileLines = input.readFile(line);
                     shifter.setup(fileLines);
+                }else if (cmdCode == MSG_ADD_LINES) {
+                    shifter.setup(line);
                 }
                 if (shifter.getLineCount() == 0) {
                     // 如果输入的内容为空，则提示用户重新输入
@@ -174,7 +199,7 @@ public class KWICImpl extends Thread implements KWIC {
                     alphabetizer.alpha(shifter);
 
                     // 输出排序后的结果
-                    if (cmdCode == CMD_ADD_LINE) {
+                    if (cmdCode == CMD_ADD_LINE|| cmdCode == MSG_ADD_LINES) {
                         // 如果是命令行输入，则直接输出
                         output.print(alphabetizer);
                         //清除shifter中的内容
